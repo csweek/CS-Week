@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Customer Service Week Card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&family=Mali:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #d40511; --secondary: #ffcc00; --bg: #f8f9fa; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Prompt', sans-serif; background-color: var(--bg); padding: 16px 12px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h1 { color: var(--primary); font-size: 1.6rem; }
+    .header p { color: #666; font-size: 0.9rem; }
+    .main-container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+    @media (max-width: 800px) { .main-container { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block; }
+    .form-control { width: 100%; padding: 10px; border: 1.5px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 1rem; }
+    textarea.form-control { resize: vertical; min-height: 110px; }
+    .template-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .template-btn { padding: 10px 4px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .template-btn.active { border-color: var(--primary); background: #fff5f5; color: var(--primary); }
+    .preview-section { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .canvas-wrapper { width: 100%; max-width: 440px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #eee; }
+    canvas { width: 100%; height: auto; display: block; }
+    .btn-download { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1.05rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; font-family: inherit; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>สร้างการ์ดขอบคุณ (Appreciation Card)</h1>
+    <p>DHL Express • Customer Service Week</p>
+  </div>
+
+  <div class="main-container">
+    <div class="form-section">
+      <div class="form-group">
+        <label>1. เลือกรูปแบบการ์ด</label>
+        <div class="template-selector">
+          <button type="button" class="template-btn active" onclick="selectTemplate('template1.png', 1)">1. The Extra Mile</button>
+          <button type="button" class="template-btn" onclick="selectTemplate('template2.png', 2)">2. Heartfelt Note</button>
+          <button type="button" class="template-btn" onclick="selectTemplate('template3.png', 3)">3. CAN DO</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="msgInput">2. ข้อความของคุณ (Message):</label>
+        <textarea id="msgInput" class="form-control" placeholder="พิมพ์ข้อความชื่นชม หรือความประทับใจที่นี่..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="fromInput">3. จากใคร (From):</label>
+        <input type="text" id="fromInput" class="form-control" placeholder="เช่น เพื่อนร่วมทีม Customer Service">
+      </div>
+
+      <div class="form-group">
+        <label for="fontSelect">รูปแบบตัวอักษร:</label>
+        <select id="fontSelect" class="form-control">
+          <option value="'Prompt', sans-serif">Prompt (ทางการ ทันสมัย)</option>
+          <option value="'Mali', cursive">Mali (แนวลายมือ อบอุ่น)</option>
+          <option value="'Sarabun', sans-serif">Sarabun (สุภาพ เรียบง่าย)</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn-download" id="downloadBtn">📥 บันทึกรูปภาพการ์ด</button>
+      <p style="font-size: 0.8rem; color: #777; text-align: center; margin-top: 6px;">*สำหรับผู้ใช้ iPhone/iPad: หากปุ่มไม่ดาวน์โหลด สามารถแตะค้างที่รูปการ์ดเพื่อกดบันทึกได้เช่นกัน</p>
+    </div>
+
+    <div class="preview-section">
+      <div class="canvas-wrapper">
+        <canvas id="cardCanvas" width="1000" height="1000"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('cardCanvas');
+    const ctx = canvas.getContext('2d');
+    let currentTemplate = 'template1.png';
+    let currentTemplateId = 1;
+    const bgImage = new Image();
+
+    const msgInput = document.getElementById('msgInput');
+    const fromInput = document.getElementById('fromInput');
+    const fontSelect = document.getElementById('fontSelect');
+
+    function selectTemplate(imgName, id) {
+      currentTemplate = imgName;
+      currentTemplateId = id;
+      document.querySelectorAll('.template-btn').forEach((btn, index) => {
+        btn.classList.toggle('active', index === id - 1);
+      });
+      loadAndDraw();
+    }
+
+    function loadAndDraw() {
+      bgImage.src = currentTemplate;
+      bgImage.onload = () => { renderCard(); };
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split('');
+      let line = '';
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n];
+        if (context.measureText(testLine).width > maxWidth && n > 0) {
+          context.fillText(line, x, y);
+          line = words[n];
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, y);
+      return y;
+    }
+
+    function renderCard() {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+      const msgText = msgInput.value.trim() || 'ขอบคุณสำหรับการทุ่มเทและช่วยเหลืออย่างดีเยี่ยมเสมอมา!';
+      const fromText = fromInput.value.trim() || 'ชื่อผู้ส่ง';
+      const selectedFont = fontSelect.value;
+      ctx.fillStyle = '#2d2d2d';
+
+      if (currentTemplateId === 1) {
+        ctx.font = `28px ${selectedFont}`;
+        const lastY = wrapText(ctx, msgText, 320, 420, 360, 42);
+        ctx.font = `italic bold 26px ${selectedFont}`;
+        ctx.fillText(`จาก: ${fromText}`, 320, Math.max(lastY + 45, 590));
+      } else if (currentTemplateId === 2) {
+        ctx.save();
+        ctx.translate(510, 410);
+        ctx.rotate(-7 * Math.PI / 180);
+        ctx.font = `28px ${selectedFont}`;
+        const lastY = wrapText(ctx, msgText, -190, -50, 390, 42);
+        ctx.font = `italic bold 26px ${selectedFont}`;
+        ctx.fillText(`จาก: ${fromText}`, -190, Math.max(lastY + 45, 120));
+        ctx.restore();
+      } else if (currentTemplateId === 3) {
+        ctx.font = `30px ${selectedFont}`;
+        const lastY = wrapText(ctx, msgText, 170, 420, 660, 46);
+        ctx.font = `italic bold 28px ${selectedFont}`;
+        ctx.fillText(`จาก: ${fromText}`, 170, Math.max(lastY + 50, 610));
+      }
+    }
+
+    [msgInput, fromInput, fontSelect].forEach(element => {
+      element.addEventListener('input', renderCard);
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `DHL-Card-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    loadAndDraw();
+  </script>
+</body>
+</html>
