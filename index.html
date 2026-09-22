@@ -152,7 +152,7 @@
       element.addEventListener('input', renderCard);
     });
 
-            document.getElementById('downloadBtn').addEventListener('click', async () => {
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
       const dataUrl = canvas.toDataURL('image/png');
       const filename = `DHL-Card-${Date.now()}.png`;
 
@@ -217,36 +217,6 @@
       document.getElementById('modalPreview').src = src;
       modal.style.display = 'flex';
     }
-('click', async () => {
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const filename = `DHL-Card-${Date.now()}.png`;
-        const file = new File([blob], filename, { type: 'image/png' });
-
-        // ตรวจสอบระบบแชร์ของ iPhone / iPad
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: 'DHL Appreciation Card',
-              text: 'การ์ดขอบคุณ Customer Service Week'
-            });
-          } catch (err) {
-            // กรณีกดยกเลิก
-          }
-        } else {
-          // ดาวน์โหลดปกติสำหรับคอมพิวเตอร์
-          const link = document.createElement('a');
-          link.download = filename;
-          link.href = URL.createObjectURL(blob);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-        }
-      }, 'image/png');
-    });
-
 
     loadAndDraw();
   </script>
