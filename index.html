@@ -152,71 +152,36 @@
       element.addEventListener('input', renderCard);
     });
 
-        document.getElementById('downloadBtn').addEventListener('click', async () => {
-      const dataUrl = canvas.toDataURL('image/png');
-      const filename = `DHL-Card-${Date.now()}.png`;
-
-      // ตรวจสอบว่าเปิดในแอป เช่น LINE หรือ Facebook หรือไม่
-      const isInApp = /Line|FBAN|FBAV|Instagram|Teams/i.test(navigator.userAgent);
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      // 1. ถ้าเปิดใน LINE / Teams ให้เปิดหน้าต่างรูปให้แตะค้างเซฟทันที (แก้ปัญหา In-App บล็อกดาวน์โหลด)
-      if (isInApp) {
-        showImageModal(dataUrl);
-        return;
-      }
-
-      // 2. ตรวจสอบระบบแชร์ (สำหรับ iOS Safari / อุปกรณ์ที่รองรับ)
-      try {
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            document.getElementById('downloadBtn').addEventListener('click', async () => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const filename = `DHL-Card-${Date.now()}.png`;
         const file = new File([blob], filename, { type: 'image/png' });
 
+        // ตรวจสอบระบบแชร์ของ iPhone / iPad
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'DHL Appreciation Card',
-            text: 'การ์ดขอบคุณ Customer Service Week'
-          });
-          return;
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'DHL Appreciation Card',
+              text: 'การ์ดขอบคุณ Customer Service Week'
+            });
+          } catch (err) {
+            // กรณีกดยกเลิก
+          }
+        } else {
+          // ดาวน์โหลดปกติสำหรับคอมพิวเตอร์
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = URL.createObjectURL(blob);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
         }
-      } catch (err) {
-        // หากผู้ใช้กดยกเลิกการแชร์ ไม่ต้องทำอะไร
-        if (err.name === 'AbortError') return;
-      }
-
-      // 3. สำหรับ Android Chrome และคอมพิวเตอร์: บังคับดาวน์โหลดไฟล์ลงเครื่องตรงๆ
-      try {
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (e) {
-        // แผนสำรองกรณีเครื่องบล็อกดาวน์โหลดเด็ดขาด
-        showImageModal(dataUrl);
-      }
+      }, 'image/png');
     });
 
-    // หน้าต่างแสดงภาพสำรองสำหรับแตะค้างบันทึกรูป
-    function showImageModal(src) {
-      let modal = document.getElementById('saveModal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'saveModal';
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box;';
-        modal.innerHTML = `
-          <p style="color:#fff;font-size:15px;margin-bottom:12px;text-align:center;font-family:'Prompt',sans-serif;">
-            👉 <b>แตะค้างที่รูปภาพ</b> แล้วเลือก <b>"บันทึกรูปภาพ"</b>
-          </p>
-          <img id="modalPreview" style="max-width:90%;max-height:65vh;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,0.5);margin-bottom:15px;">
-          <button onclick="document.getElementById('saveModal').style.display='none'" style="background:#fff;border:none;padding:8px 24px;border-radius:20px;font-weight:bold;font-family:'Prompt',sans-serif;cursor:pointer;">ปิดหน้าต่าง</button>
-        `;
-        document.body.appendChild(modal);
-      }
-      document.getElementById('modalPreview').src = src;
-      modal.style.display = 'flex';
-    }
 
     loadAndDraw();
   </script>
